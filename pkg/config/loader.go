@@ -12,7 +12,7 @@ var (
 	configPath = flag.String("config", "", "path to configure file")
 )
 
-func LoadConfig(cfg interface{}){
+func MustLoad(cfg interface{}) {
 
 	if err := cleanenv.ReadConfig(cfgPath(), cfg); err != nil {
 		log.Fatalf("error load config %v", err)

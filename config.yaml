@@ -1,0 +1,10 @@
+server:
+  host: localhost
+  port: "8888"
+
+services:
+  pool:
+    - localhost:9001
+    - localhost:9002
+    - localhost:9003
+    - localhost:9004
