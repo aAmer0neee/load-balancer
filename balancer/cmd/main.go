@@ -11,6 +11,7 @@ import (
 
 	"github.com/aAmer0neee/load-balancer/balancer/domain"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/balancer"
+	"github.com/aAmer0neee/load-balancer/balancer/internal/health"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/proxy"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/service"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/transport"
@@ -26,10 +27,12 @@ func main() {
 
 	balancer := balancer.New(log, cfg)
 	proxy := proxy.New()
+	health := health.New(cfg)
 
-	service := service.New(log, proxy, balancer)
 
-	r := transport.NewHttpHandler(service, cfg)
+	balancerService := service.New(log, proxy, balancer)
+	service.StartMonitoring(cfg, balancer,health)
+	r := transport.NewHttpHandler(balancerService, cfg)
 
 	log.Info("SERVER STARTING", "HOST", cfg.Server.Host, "PORT", cfg.Server.Port)
 	go func() {

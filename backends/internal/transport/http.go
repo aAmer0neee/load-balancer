@@ -12,30 +12,30 @@ type Http struct {
 // просто заглушка, которая возвращает ответ
 func NewHttpHandler(addr string) Http {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {	
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		response := map[string]string{
 			"health": "ok",
-			"from":    addr,
+			"from":   addr,
 		}
-	
+
 		json.NewEncoder(w).Encode(response)
 	})
 
-	mux.HandleFunc("/",func(w http.ResponseWriter, r *http.Request) {
-		
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		response := map[string]string{
 			"message": "Hello World!",
 			"from":    addr,
-		}	
+		}
 		json.NewEncoder(w).Encode(response)
 	})
 	return Http{
 		Srv: &http.Server{
-			Addr: addr,
+			Addr:    addr,
 			Handler: mux,
 		},
 	}

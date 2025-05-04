@@ -8,3 +8,7 @@ services:
     - localhost:9002
     - localhost:9003
     - localhost:9004
+
+health:
+  timeout_ms: 500
+  ticker_ms: 5000

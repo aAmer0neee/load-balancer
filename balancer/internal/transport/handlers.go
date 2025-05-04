@@ -47,7 +47,7 @@ func configureHandlers(h *Http) {
 
 func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
 
-	h.service.HandleRequest(w,r)
+	h.service.HandleRequest(w, r)
 	// writeJSON(w, http.StatusOK, ResponseOK{
 	// 	Code:    http.StatusOK,
 	// 	Message: "OK",

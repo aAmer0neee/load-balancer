@@ -9,4 +9,9 @@ type Cfg struct {
 	Services struct {
 		Pool []string `yaml:"pool" env-required:"true"`
 	} `yaml:"services"`
+
+	Health struct {
+		Timeout int `yaml:"timeout_ms" env-default:"500"`
+		Ticker  int `yaml:"ticker_ms" env-default:"5000"`
+	} `yaml:"health"`
 }
