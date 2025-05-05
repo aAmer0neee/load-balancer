@@ -1,10 +1,12 @@
 package health
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
 	"github.com/aAmer0neee/load-balancer/balancer/domain"
+	"github.com/aAmer0neee/load-balancer/balancer/internal/balancer"
 )
 
 type HttpCheck struct {
@@ -20,6 +22,27 @@ func (h *HttpCheck) Check(target string) bool {
 	defer resp.Body.Close()
 
 	return resp.StatusCode == http.StatusOK
+}
+
+func (h *HttpCheck) HealthMonitoring(period int, b balancer.Balancer, log *slog.Logger) {
+	go func() {
+		ticker := time.NewTicker(time.Duration(period) * time.Millisecond)
+		defer ticker.Stop()
+
+		for range ticker.C {
+
+			for _, server := range b.All() {
+				go func(url string) {
+					status := h.Check(url)
+					if !status {
+						log.Warn("Server dead", "server", url, "alive", status)
+					}
+					b.UpdateHealth(url, status)
+				}(server)
+
+			}
+		}
+	}()
 }
 
 func newHttp(cfg domain.Cfg) *HttpCheck {

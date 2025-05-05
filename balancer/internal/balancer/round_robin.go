@@ -30,7 +30,7 @@ func newRoundRobbin(pool []string) *RoundRobbin {
 	}
 }
 
-func (r *RoundRobbin) Next() string {
+func (r *RoundRobbin) Next() (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -38,10 +38,10 @@ func (r *RoundRobbin) Next() string {
 		idx := (i + r.index) % len(r.pool)
 		if r.pool[idx].alive {
 			r.index = (idx + 1) % len(r.pool)
-			return r.pool[idx].url
+			return r.pool[idx].url, nil
 		}
 	}
-	return ""
+	return "", ErrAllDead
 }
 
 func (r *RoundRobbin) UpdateHealth(target string, health bool) {
@@ -56,7 +56,7 @@ func (r *RoundRobbin) UpdateHealth(target string, health bool) {
 }
 
 func (r *RoundRobbin) All() []string {
-	all := make([]string, len(r.pool))
+	all := []string{}
 	for _, server := range r.pool {
 		all = append(all, server.url)
 	}

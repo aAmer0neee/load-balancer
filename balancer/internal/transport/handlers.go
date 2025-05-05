@@ -2,7 +2,12 @@ package transport
 
 import (
 	"encoding/json"
+	"errors"
+	"log/slog"
+	"net"
 	"net/http"
+
+	"github.com/aAmer0neee/load-balancer/balancer/internal/limiter"
 )
 
 type ResponseError struct {
@@ -16,7 +21,7 @@ type ResponseOK struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-func configureHandlers(h *Http) {
+func configureHandlers(h *Http)http.Handler {
 
 	mux := http.NewServeMux()
 
@@ -41,8 +46,37 @@ func configureHandlers(h *Http) {
 			h.Hello(w, r)
 		}
 	})
+	
 
-	h.Srv.Handler = mux
+	return mux
+}
+
+func logRequest(next http.Handler , log *slog.Logger)http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.RequestURI == "/favicon.ico" {
+			return
+		}
+		log.Info("New request","TARGET ADDR",r.RequestURI, "METHOD", r.Method, "ADDR", r.RemoteAddr)
+		next.ServeHTTP(w,r)
+	})
+}
+
+func limitMiddleware(next http.Handler, l limiter.Limiter)http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		
+		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+
+		err := l.TakeToken(ip)
+		if errors.Is(err, limiter.ErrLimitExceeded) {
+			writeJSON(w, http.StatusTooManyRequests,ResponseError{
+				Code: http.StatusTooManyRequests,
+				Error: "To many Requests",
+			})
+			return
+		} 
+		next.ServeHTTP(w,r)
+
+	})
 }
 
 func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
@@ -56,6 +90,7 @@ func (h *Http) Hello(w http.ResponseWriter, r *http.Request) {
 }
 
 func writeJSON(w http.ResponseWriter, code int, payload any) {
+	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(payload)

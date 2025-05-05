@@ -1,9 +1,11 @@
 package transport
 
 import (
+	"log/slog"
 	"net/http"
 
 	"github.com/aAmer0neee/load-balancer/balancer/domain"
+	"github.com/aAmer0neee/load-balancer/balancer/internal/limiter"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/service"
 )
 
@@ -12,7 +14,7 @@ type Http struct {
 	service service.GatewayService
 }
 
-func NewHttpHandler(s service.GatewayService, cfg domain.Cfg) *Http {
+func NewHttpHandler(s service.GatewayService, cfg domain.Cfg, l limiter.Limiter, log *slog.Logger) *Http {
 	h := &Http{
 		service: s,
 		Srv: http.Server{
@@ -20,7 +22,11 @@ func NewHttpHandler(s service.GatewayService, cfg domain.Cfg) *Http {
 		},
 	}
 
-	configureHandlers(h)
+	router := configureHandlers(h)
 
+	handler := limitMiddleware(router, l)
+
+
+	h.Srv.Handler = logRequest(handler, log) 
 	return h
 }

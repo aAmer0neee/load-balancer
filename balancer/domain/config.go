@@ -14,4 +14,9 @@ type Cfg struct {
 		Timeout int `yaml:"timeout_ms" env-default:"500"`
 		Ticker  int `yaml:"ticker_ms" env-default:"5000"`
 	} `yaml:"health"`
+
+	Limiter struct {
+		Capacity uint32 `yaml:"capacity" env-default:"500"`
+		Ticker   int    `yaml:"ticker_ms" env-default:"2000"`
+	} `yaml:"limiter"`
 }

@@ -1,18 +1,17 @@
 package service
 
 import (
+	"errors"
+
 	"log/slog"
 	"net/http"
-	"time"
 
-	"github.com/aAmer0neee/load-balancer/balancer/domain"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/balancer"
-	"github.com/aAmer0neee/load-balancer/balancer/internal/health"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/proxy"
 )
 
 type GatewayService interface {
-	HandleRequest(w http.ResponseWriter, r *http.Request)
+	HandleRequest(w http.ResponseWriter, r *http.Request) error
 }
 
 type Gateway struct {
@@ -22,6 +21,7 @@ type Gateway struct {
 }
 
 func New(l *slog.Logger, p proxy.Proxy, b balancer.Balancer) GatewayService {
+
 	return &Gateway{
 		log:      l,
 		balancer: b,
@@ -29,26 +29,25 @@ func New(l *slog.Logger, p proxy.Proxy, b balancer.Balancer) GatewayService {
 	}
 }
 
-func (g *Gateway) HandleRequest(w http.ResponseWriter, r *http.Request) {
+func (g *Gateway) HandleRequest(w http.ResponseWriter, r *http.Request) error {
 
-	backendURL := g.balancer.Next()
-
-	g.proxy.ServeHttp(w, r, backendURL)
-	g.log.Debug("Proxy request to", "server url", backendURL)
-}
-
-func StartMonitoring(cfg domain.Cfg, b balancer.Balancer, h health.Health) {
-
-	go func() {
-		ticker := time.NewTicker(time.Duration(cfg.Health.Ticker) * time.Millisecond)
-		defer ticker.Stop()
-		for range ticker.C {
-
-			for _, server := range b.All() {
-				go func(url string) {
-					b.UpdateHealth(url, h.Check(url))
-				}(server)
-			}
+	maxAttemp := 5
+	for i := 0; i <= maxAttemp; i++ {
+		backendURL, err := g.balancer.Next()
+		if err != nil {
+			continue
 		}
-	}()
+		err = g.proxy.ServeHttp(w, r, backendURL)
+		if err == nil {
+			g.log.Info("Forwarding request", "proxy", backendURL)
+			return nil
+		} else {
+			g.log.Warn("Error send request", "proxy", backendURL, "message", err.Error())
+			continue
+		}
+
+	}
+	g.log.Warn("no alive servers")
+	return errors.New("no alive servers")
+
 }

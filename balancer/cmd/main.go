@@ -12,6 +12,7 @@ import (
 	"github.com/aAmer0neee/load-balancer/balancer/domain"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/balancer"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/health"
+	"github.com/aAmer0neee/load-balancer/balancer/internal/limiter"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/proxy"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/service"
 	"github.com/aAmer0neee/load-balancer/balancer/internal/transport"
@@ -29,15 +30,23 @@ func main() {
 	proxy := proxy.New()
 	health := health.New(cfg)
 
-
 	balancerService := service.New(log, proxy, balancer)
-	service.StartMonitoring(cfg, balancer,health)
-	r := transport.NewHttpHandler(balancerService, cfg)
+
+	health.HealthMonitoring(cfg.Health.Ticker, balancer, log)
+
+
+	limiter := limiter.New(cfg)
+
+	limiter.StartRefillTokens()
+
+	r := transport.NewHttpHandler(balancerService, cfg, limiter, log)
 
 	log.Info("SERVER STARTING", "HOST", cfg.Server.Host, "PORT", cfg.Server.Port)
+
 	go func() {
 		shutdown(r, log)
 	}()
+
 	if err := r.Srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Info("ERORR START SERVER", "message", err.Error())
 		os.Exit(1)

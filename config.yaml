@@ -12,3 +12,7 @@ services:
 health:
   timeout_ms: 500
   ticker_ms: 5000
+
+limiter:
+  capacity: 5
+  ticker_ms: 5000
