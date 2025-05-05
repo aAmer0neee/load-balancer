@@ -30,6 +30,7 @@ func newRoundRobbin(pool []string) *RoundRobbin {
 	}
 }
 
+// возвращает живой сервер, если такого нет, то возвращает ошибку 
 func (r *RoundRobbin) Next() (string, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -44,6 +45,7 @@ func (r *RoundRobbin) Next() (string, error) {
 	return "", ErrAllDead
 }
 
+// обновляет здоровье сервера
 func (r *RoundRobbin) UpdateHealth(target string, health bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -55,6 +57,7 @@ func (r *RoundRobbin) UpdateHealth(target string, health bool) {
 	}
 }
 
+// возвращает список серверов, для периодичной проврки состояния
 func (r *RoundRobbin) All() []string {
 	all := []string{}
 	for _, server := range r.pool {

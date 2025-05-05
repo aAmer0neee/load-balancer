@@ -10,6 +10,10 @@ import (
 	"github.com/aAmer0neee/load-balancer/balancer/internal/proxy"
 )
 
+var (
+	ErrInternalService = errors.New("Internal Service Error")
+)
+
 type GatewayService interface {
 	HandleRequest(w http.ResponseWriter, r *http.Request) error
 }
@@ -29,6 +33,7 @@ func New(l *slog.Logger, p proxy.Proxy, b balancer.Balancer) GatewayService {
 	}
 }
 
+// основной сервис, запрашивает живой сервис, и проксирует, в случае ошибки пробует несколько раз
 func (g *Gateway) HandleRequest(w http.ResponseWriter, r *http.Request) error {
 
 	maxAttemp := 5
@@ -48,6 +53,6 @@ func (g *Gateway) HandleRequest(w http.ResponseWriter, r *http.Request) error {
 
 	}
 	g.log.Warn("no alive servers")
-	return errors.New("no alive servers")
+	return ErrInternalService
 
 }

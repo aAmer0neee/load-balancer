@@ -13,6 +13,7 @@ type HttpCheck struct {
 	Timeout time.Duration
 }
 
+// проверяет один сервер
 func (h *HttpCheck) Check(target string) bool {
 	client := http.Client{Timeout: h.Timeout}
 	resp, err := client.Get("http://" + target)
@@ -24,6 +25,7 @@ func (h *HttpCheck) Check(target string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+// периодичный чек всех серверов
 func (h *HttpCheck) HealthMonitoring(period int, b balancer.Balancer, log *slog.Logger) {
 	go func() {
 		ticker := time.NewTicker(time.Duration(period) * time.Millisecond)

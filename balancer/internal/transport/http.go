@@ -12,6 +12,7 @@ import (
 type Http struct {
 	Srv     http.Server
 	service service.GatewayService
+	log *slog.Logger
 }
 
 func NewHttpHandler(s service.GatewayService, cfg domain.Cfg, l limiter.Limiter, log *slog.Logger) *Http {
@@ -20,13 +21,14 @@ func NewHttpHandler(s service.GatewayService, cfg domain.Cfg, l limiter.Limiter,
 		Srv: http.Server{
 			Addr: cfg.Server.Host + ":" + cfg.Server.Port,
 		},
+		log: log,
 	}
 
-	router := configureHandlers(h)
+	router := h.configureHandlers()
 
-	handler := limitMiddleware(router, l)
+	handler := h.limitMiddleware(router, l)
 
 
-	h.Srv.Handler = logRequest(handler, log) 
+	h.Srv.Handler = h.logRequest(handler) 
 	return h
 }

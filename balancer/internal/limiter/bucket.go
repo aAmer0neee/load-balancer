@@ -27,6 +27,8 @@ func newBucket(period int, capacity uint32) *BucketLimiter {
 	}
 }
 
+// проверяет наличие токенов для клиента, если клиента нет, создает бакет,
+// токены закончились - возвращает ошибку превышения лимита
 func (l *BucketLimiter) TakeToken(id string) error {
 
 	value, _ := l.userBuckets.LoadOrStore(id, &tokenBucket{
@@ -50,6 +52,7 @@ func (l *BucketLimiter) TakeToken(id string) error {
 	return nil
 }
 
+// периодичное пополнение токенов во всех бакетах
 func (l *BucketLimiter) StartRefillTokens() {
 	go func() {
 

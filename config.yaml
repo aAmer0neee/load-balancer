@@ -14,5 +14,5 @@ health:
   ticker_ms: 5000
 
 limiter:
-  capacity: 5
+  capacity: 1
   ticker_ms: 5000
